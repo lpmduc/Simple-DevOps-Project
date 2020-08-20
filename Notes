@@ -1,0 +1,115 @@
+1. Deploy new k8s on AWS:
+export KOPS_STATE_STORE=s3://__.net
+
+
+Modify hosts file in Ansible-server
+Copy id_rsa.pub from Ansible 
+
+Packer:
+{
+  "builders": [
+    {
+      "type": "docker",
+      "image": "tomcat:8.0",
+      "commit": "true",
+      "pull": "true",
+      "run_command": [
+        "-d",
+        "-i",
+        "-t",
+        "tomcat:8.0"
+      ]
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "mkdir -p /user/local/tomcat/webapps",
+        "apt-get update"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "/opt/packer/webapp.war",
+      "destination": "/user/local/tomcat/webapps/webapp.war"
+    }
+  ],
+
+  "post-processors": [
+    [
+      {
+        "type": "docker-tag",
+        "repository": "duclpminh/simple-devops-image",
+        "tag": "latest"
+      },
+      {
+        "type": "docker-push",
+        "login": "true",
+        "login_username": "duclpminh",
+        "login_password": "Windupbird@94"
+      }
+
+    ],
+    {
+      "type": "shell-local",
+      "inline": ["docker image prune -af"]
+    }
+  ]
+}
+
+####################################
+
+
+On k8s Master:
+
+*k8s-deploy.yml
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: valaxy-deployment
+spec:
+  selector:
+    matchLabels:
+      app: valaxy-devops-project
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+
+  template:
+    metadata:
+      labels:
+        app: valaxy-devops-project
+    spec:
+      containers:
+      - name: valaxy-devops-project
+        image: duclpminh/simple-devops-image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+
+#########
+
+*k8s-service.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-service
+  labels:
+    app: simple-devops-project
+spec:
+  selector:
+    app: simple-devops-project
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 31200
+---
