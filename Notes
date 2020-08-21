@@ -6,7 +6,8 @@ kops update cluster demo.k8s.simpledevops.net --yes
 kops validate cluster
 ssh -i ~/.ssh/id_rsa ubuntu@api.demo.k8s.simpledevops.net
 
-Modify hosts file in Ansible-server
+@Ansible-server:
+Modify hosts file
 Copy id_rsa.pub from Ansible to authorized_host on k8s master
 ssh -i id_rsa ubuntu@54.83.141.18
 
@@ -67,10 +68,48 @@ cat create-docker-image.json
 
 ####################################
 
-On k8s Master:
+3. ANSIBLE:
 
-*k8s-deploy.yml
+Command: ansible-playbook -i [hosts_file] [ansible-playbook_file]
+
+cat kubernetes-deployment.yml
 ---
+- name: Create pods using deployment
+  hosts: kubernetes
+  user: ubuntu
+
+  tasks:
+  - name: create a deployment
+    command: kubectl apply -f k8s-deploy.yml
+
+  - name: update deployment with new pods if image updated in docker hub
+    command: kubectl rollout restart deployment.v1.apps/simple-devops-deployment
+++
+
+cat kubernetes-service.yml
+---
+- name: create service for deployment
+  hosts: kubernetes
+  user: ubuntu
+
+  tasks:
+  - name: create a service
+    command: kubectl apply -f k8s-service.yml
+++
+
+cat hosts
+[ansible-server]
+localhost
+
+[kubernetes]
+54.83.141.18 <- k8s master IP
+
+
+#######################
+
+4. K8s Master:
+
+cat k8s-deploy.yml
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
@@ -97,12 +136,9 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
----
+++
 
-#########
-
-*k8s-service.yml
----
+cat k8s-service.yml
 apiVersion: v1
 kind: Service
 metadata:
@@ -117,4 +153,3 @@ spec:
     - port: 8080
       targetPort: 8080
       nodePort: 31200
----
