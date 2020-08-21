@@ -1,18 +1,20 @@
 1. Deploy new k8s on AWS:
-export KOPS_STATE_STORE=s3://__.net
-
+export KOPS_STATE_STORE=s3://demo.k8s.simpledevops.net
+ssh-key OR delete .ssh/known_hosts
+kops create cluster --cloud=aws --zones=us-east-1b --name=demo.k8s.simpledevops.net --dns-zone=simpledevops.net --dns private
+kops update cluster demo.k8s.simpledevops.net --yes
 
 Modify hosts file in Ansible-server
 Copy id_rsa.pub from Ansible 
 
-Packer:
+2. PACKER:
+cat create-docker-image.json
 {
   "builders": [
     {
       "type": "docker",
       "image": "tomcat:8.0",
       "commit": "true",
-      "pull": "true",
       "run_command": [
         "-d",
         "-i",
@@ -26,14 +28,14 @@ Packer:
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /user/local/tomcat/webapps",
-        "apt-get update"
+        "apt-get update",
+        "mkdir -p /usr/local/tomcat/webapps"
       ]
     },
     {
       "type": "file",
-      "source": "/opt/packer/webapp.war",
-      "destination": "/user/local/tomcat/webapps/webapp.war"
+      "source": "webapp.war",
+      "destination": "/usr/local/tomcat/webapps/webapp.war"
     }
   ],
 
@@ -59,8 +61,8 @@ Packer:
   ]
 }
 
-####################################
 
+####################################
 
 On k8s Master:
 
@@ -69,11 +71,11 @@ On k8s Master:
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: valaxy-deployment
+  name: simple-devops-deployment
 spec:
   selector:
     matchLabels:
-      app: valaxy-devops-project
+      app: simple-devops-project
   replicas: 2 # tells deployment to run 2 pods matching the template
   strategy:
     type: RollingUpdate
@@ -84,10 +86,10 @@ spec:
   template:
     metadata:
       labels:
-        app: valaxy-devops-project
+        app: simple-devops-project
     spec:
       containers:
-      - name: valaxy-devops-project
+      - name: simple-devops-project
         image: duclpminh/simple-devops-image
         imagePullPolicy: Always
         ports:
@@ -101,7 +103,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: simple-service
+  name: simple-devops-service
   labels:
     app: simple-devops-project
 spec:
