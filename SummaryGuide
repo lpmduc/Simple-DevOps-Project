@@ -1,3 +1,5 @@
+ kops delete cluster demo.k8s.simpledevops.net --yes
+
 1. Deploy new k8s on AWS:
 export KOPS_STATE_STORE=s3://demo.k8s.simpledevops.net
 ssh-key OR delete .ssh/known_hosts
