@@ -7,7 +7,8 @@ kops validate cluster
 ssh -i ~/.ssh/id_rsa ubuntu@api.demo.k8s.simpledevops.net
 
 Modify hosts file in Ansible-server
-Copy id_rsa.pub from Ansible 
+Copy id_rsa.pub from Ansible to authorized_host on k8s master
+ssh -i id_rsa ubuntu@54.83.141.18
 
 2. PACKER:
 cat create-docker-image.json
