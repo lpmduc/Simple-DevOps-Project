@@ -3,6 +3,8 @@ export KOPS_STATE_STORE=s3://demo.k8s.simpledevops.net
 ssh-key OR delete .ssh/known_hosts
 kops create cluster --cloud=aws --zones=us-east-1b --name=demo.k8s.simpledevops.net --dns-zone=simpledevops.net --dns private
 kops update cluster demo.k8s.simpledevops.net --yes
+kops validate cluster
+ssh -i ~/.ssh/id_rsa ubuntu@api.demo.k8s.simpledevops.net
 
 Modify hosts file in Ansible-server
 Copy id_rsa.pub from Ansible 
